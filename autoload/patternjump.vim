@@ -130,11 +130,12 @@ function! patternjump#forward(mode, ...) "{{{
     let string = getline('.')
     let col    = (a:mode == 'i') ? (col('.') - 1) : col('.')
   endif
+  let len = len(string)
 
   " scan head patterns
   for pattern in head_pattern_list
     let Nth = 0
-    let len = len(string)
+    let previous_pos = -1
     while 1
       let Nth += 1
       let matched_pos = match(string, pattern, 0, Nth)
@@ -143,7 +144,11 @@ function! patternjump#forward(mode, ...) "{{{
 
       " counter measure for special patterns like '$'
       " patched! : Vim 7.4.184
+      " &encoding == cp932
       if matched_pos > len | break | endif
+      " &encoding == utf-8
+      if matched_pos == previous_pos | break | endif
+      let previous_pos = matched_pos
 
       if matched_pos > col
         let candidate_positions += [matched_pos]
@@ -161,7 +166,7 @@ function! patternjump#forward(mode, ...) "{{{
   " scan tail patterns
   for pattern in tail_pattern_list
     let Nth = 0
-    let len = len(string)
+    let previous_pos = -1
     while 1
       let Nth += 1
       let matched_pos = matchend(string, pattern, 0, Nth)
@@ -169,7 +174,11 @@ function! patternjump#forward(mode, ...) "{{{
 
       " counter measure for special patterns like '$'
       " patched! : Vim 7.4.184
+      " &encoding == cp932
       if matched_pos > len | break | endif
+      " &encoding == utf-8
+      if matched_pos == previous_pos | break | endif
+      let previous_pos = matched_pos
 
       if matched_pos > col
         let candidate_positions += [matched_pos]
@@ -312,14 +321,24 @@ function! patternjump#backward(mode, ...) "{{{
     let string = getline('.')
     let col    = (a:mode == 'i') ? (col('.') - 1) : col('.')
   endif
+  let len = len(string)
 
   " scan head patterns
   for pattern in head_pattern_list
     let Nth = 0
+    let previous_pos = -1
     while 1
       let Nth += 1
       let matched_pos = match(string, pattern, 0, Nth)
       let matched_pos = (a:mode =~# '[nxo]') ? ((matched_pos < 0) ? matched_pos : (matched_pos + 1)) : matched_pos
+
+      " counter measure for special patterns like '$'
+      " patched! : Vim 7.4.184
+      " &encoding == cp932
+      if matched_pos > len | break | endif
+      " &encoding == utf-8
+      if matched_pos == previous_pos | break | endif
+      let previous_pos = matched_pos
 
       if matched_pos < 0 || matched_pos >= col
         break
@@ -334,11 +353,19 @@ function! patternjump#backward(mode, ...) "{{{
   " scan tail patterns
   for pattern in tail_pattern_list
     let Nth = 0
-    let len = len(string)
+    let previous_pos = -1
     while 1
       let Nth += 1
       let matched_pos = matchend(string, pattern, 0, Nth)
       let matched_pos = ((a:mode =~# '[nxo]') && (matched_pos == 0)) ? 1 : matched_pos
+
+      " counter measure for special patterns like '$'
+      " patched! : Vim 7.4.184
+      " &encoding == cp932
+      if matched_pos > len | break | endif
+      " &encoding == utf-8
+      if matched_pos == previous_pos | break | endif
+      let previous_pos = matched_pos
 
       if matched_pos < 0 || matched_pos >= col
         break
